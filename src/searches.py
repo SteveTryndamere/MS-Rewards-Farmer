@@ -1,3 +1,4 @@
+# type:ignore
 import contextlib
 import dbm.dumb
 import json

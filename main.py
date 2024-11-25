@@ -1,3 +1,4 @@
+# type: ignore
 import argparse
 import csv
 import json
@@ -6,36 +7,79 @@ import logging.config
 import logging.handlers as handlers
 import random
 import re
+import struct
 import sys
 import traceback
 from datetime import datetime
 from enum import Enum, auto
 
+import pandas as pd
+
 from src import (
+    Account,
     Browser,
+    DailySet,
     Login,
     MorePromotions,
     PunchCards,
-    Searches,
     ReadToEarn,
-    DailySet,
-    Account,
+    Searches,
 )
 from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
-from src.utils import Utils
+from src.utils import Utils, check_completion, manage_running_status, parse_log
+
+MAX_RERUNS = 3
+CD_BETWEEN_ACCOUNT_RUNS = 37
 
 
-def main():
+def get_rerun_accounts():
+    rerun_needed_accounts = []
+    # determine which accounts need to be rerun based on the recent logs
+    try:
+        log_summary = parse_log()  # fetch the most recent log
+        df_completion = check_completion(log_summary, ret_type="df")
+        df_max_run = df_completion.loc[
+            df_completion.groupby("account")["run_index"].idxmax()
+        ].reset_index(drop=True)
+        today = datetime.today().date()
+        df_max_run["is_run_today"] = (
+            df_max_run["ts_start"].apply(pd.Timestamp).dt.date == today
+        )
+        # accounts need to be rerun if the last run was not today or if the last run was today but not completed
+        rerun_needed_accountnames = df_max_run[
+            (df_max_run["is_run_today"] == False)
+            | (
+                (df_max_run["is_run_today"] == True)
+                & (df_max_run["overall_completion"] == False)
+            )
+        ]["account"].tolist()
+        rerun_needed_accounts = [
+            acc for acc in setupAccounts() if acc.username in rerun_needed_accountnames
+        ]
+        cur_reruns = df_max_run[df_max_run["is_run_today"]]["run_index"].max()
+    except FileNotFoundError:  # no log file found
+        rerun_needed_accounts = setupAccounts()  # rerun all available accounts
+        cur_reruns = 0
+    return cur_reruns, rerun_needed_accounts
+
+
+def main(accounts=None):
+    manage_running_status(action="set", value=True)
+
     args = argumentParser()
     Utils.args = args
     setupLogging()
-    loadedAccounts = setupAccounts()
+    loadedAccounts = setupAccounts() if accounts is None else accounts
 
     # Load previous day's points data
     previous_points_data = load_previous_points_data()
 
-    for currentAccount in loadedAccounts:
+    logging.info("Main Run Started")
+    for accountIter, currentAccount in enumerate(loadedAccounts, 1):
+        logging.info(
+            f"[POINTS] Processing account {accountIter}/{len(loadedAccounts)}: {currentAccount.username}"
+        )
         try:
             earned_points = executeBot(currentAccount, args)
         except Exception as e1:
@@ -63,6 +107,9 @@ def main():
     # Save the current day's points data for the next day in the "logs" folder
     save_previous_points_data(previous_points_data)
     logging.info("[POINTS] Data saved for the next day.")
+    logging.info("Main Run Ended")
+
+    manage_running_status(action="set", value=False)
 
 
 def log_daily_points_to_csv(earned_points, points_difference):
@@ -352,10 +399,25 @@ def save_previous_points_data(data):
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        logging.exception("")
-        Utils.sendNotification(
-            "⚠️ Error occurred, please check the log", traceback.format_exc()
+    cur_reruns, rerun_needed_accounts = get_rerun_accounts()
+    max_runs_flag = cur_reruns < MAX_RERUNS
+    while max_runs_flag and len(rerun_needed_accounts) > 0:
+        print(
+            f"*** Today's runs done:{cur_reruns}, {len(rerun_needed_accounts)} accounts to rerun:{[a.username for a in rerun_needed_accounts]}"
         )
+        try:
+            for account in rerun_needed_accounts:
+                main([account])
+                time.sleep(CD_BETWEEN_ACCOUNT_RUNS)
+                logging.info(
+                    f"*** sleeping for {CD_BETWEEN_ACCOUNT_RUNS} seconds before running the next account"
+                )
+        except Exception as e:
+            # # TODO notify user with a message that the maximum number of reruns has been reached + df_completion
+            # pass
+            logging.exception("")
+            Utils.sendNotification(
+                "⚠️ Error occurred, please check the log", traceback.format_exc()
+            )
+        cur_reruns, rerun_needed_accounts = get_rerun_accounts()
+        max_runs_flag = cur_reruns < MAX_RERUNS

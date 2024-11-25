@@ -1,8 +1,10 @@
+# type: ignore
 import logging
 import urllib.parse
 from datetime import datetime
 
 from src.browser import Browser
+
 from .activities import Activities
 
 
@@ -11,6 +13,7 @@ class DailySet:
         self.browser = browser
         self.webdriver = browser.webdriver
         self.activities = Activities(browser)
+        self.rerun = False
 
     def completeDailySet(self):
         # Function to complete the Daily Set
@@ -39,9 +42,7 @@ class DailySet:
                         )
                         # Complete This or That for a specific point progress max
                         self.activities.completeThisOrThat()
-                    elif (
-                        activity["pointProgressMax"] in [40, 30]
-                    ):
+                    elif activity["pointProgressMax"] in [40, 30]:
                         logging.info(f"[DAILY SET] Completing quiz of card {cardId}")
                         # Complete quiz for specific point progress max
                         self.activities.completeQuiz()
