@@ -76,7 +76,8 @@ class Utils:
             return
         for url in urls:
             apprise.add(url)
-        assert apprise.notify(title=str(title), body=str(body))
+        # assert apprise.notify(title=str(title), body=str(body)) # apprise sometimes return False even if notification is sent successfully
+        apprise.notify(title=str(title), body=str(body))
 
     def waitUntilVisible(
         self, by: str, selector: str, timeToWait: float = 10

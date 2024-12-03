@@ -19,6 +19,7 @@ class DailySet:
         # Function to complete the Daily Set
         logging.info("[DAILY SET] " + "Trying to complete the Daily Set...")
         data = self.browser.utils.getDashboardData()["dailySetPromotions"]
+        print(data)
         self.browser.utils.goToRewards()
         todayDate = datetime.now().strftime("%m/%d/%Y")
         for activity in data.get(todayDate, []):
@@ -26,6 +27,7 @@ class DailySet:
             try:
                 # Open the Daily Set activity
                 if activity["complete"] is not False:
+                    # logging.info(f"[DAILY SET] Completed search of card {cardId}")
                     continue
                 self.activities.openDailySetActivity(cardId)
                 if activity["promotionType"] == "urlreward":
