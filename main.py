@@ -71,7 +71,7 @@ def get_rerun_accounts():
 
 
 def main(accounts=None):
-    manage_running_status(action="set", value=True)
+    # manage_running_status(action="set", value=True)
 
     args = argumentParser()
     Utils.args = args
@@ -115,7 +115,7 @@ def main(accounts=None):
     logging.info("[POINTS] Data saved for the next day.")
     logging.info("Main Run Ended")
 
-    manage_running_status(action="set", value=False)
+    # manage_running_status(action="set", value=False)
 
 
 def log_daily_points_to_csv(earned_points, points_difference):

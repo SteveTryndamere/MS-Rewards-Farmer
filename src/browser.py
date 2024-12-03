@@ -206,7 +206,8 @@ class Browser:
     def getCCodeLang(lang: str, geo: str) -> tuple:
         if lang is None or geo is None:
             try:
-                nfo = ipapi.location()
+                # nfo = ipapi.location() # TODO TEMPORARY bypass this due to rate limiting, issue: https://github.com/klept0/MS-Rewards-Farmer/issues/196
+                return "en", "US"
             except RateLimited:
                 logging.warning("Returning default", exc_info=True)
                 return "en", "US"
