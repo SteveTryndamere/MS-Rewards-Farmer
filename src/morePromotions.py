@@ -1,3 +1,4 @@
+# type: ignore
 import contextlib
 import logging
 import random
@@ -7,6 +8,7 @@ from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 
 from src.browser import Browser
+
 from .activities import Activities
 from .utils import Utils
 

@@ -188,3 +188,7 @@ runbot.bat
 /google_trends.bak
 /config-private.yaml
 accounts copy.json
+
+# Ignore everything except the repo folder
+/*
+!/

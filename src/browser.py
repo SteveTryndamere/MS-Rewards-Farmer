@@ -50,7 +50,8 @@ class Browser:
         if newBrowserConfig:
             self.browserConfig = newBrowserConfig
             Utils.saveBrowserConfig(self.userDataDir, self.browserConfig)
-        self.webdriver = self.browserSetup()
+
+        self.webdriver = self.browserSetup(profile_path=account.chrome_profile_path)
         self.utils = Utils(self.webdriver)
         logging.debug("out __init__")
 
@@ -74,6 +75,7 @@ class Browser:
 
     def browserSetup(
         self,
+        profile_path: Path | str | None = None,
     ) -> undetected_chromedriver.Chrome:
         # Configure and setup the Chrome browser
         options = undetected_chromedriver.ChromeOptions()
@@ -94,7 +96,9 @@ class Browser:
         options.add_argument("--disable-features=Translate")
         options.add_argument("--disable-features=PrivacySandboxSettings4")
         options.add_argument("--disable-search-engine-choice-screen")  # 153
-
+        if profile_path:
+            print(f"Using chrome profile: {profile_path}")
+            options.add_argument(f"--user-data-dir={profile_path}")
         seleniumwireOptions: dict[str, Any] = {"verify_ssl": False}
 
         if self.proxy:

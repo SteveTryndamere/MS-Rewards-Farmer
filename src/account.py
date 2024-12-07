@@ -7,3 +7,4 @@ class Account:
     password: str
     totp: str | None = None
     proxy: str | None = None
+    chrome_profile_path: str | None = None

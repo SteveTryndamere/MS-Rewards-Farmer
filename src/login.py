@@ -1,6 +1,8 @@
+# type: ignore
 import argparse
 import contextlib
 import logging
+import time
 from argparse import Namespace
 
 from pyotp import TOTP
@@ -9,6 +11,8 @@ from selenium.webdriver.common.by import By
 from undetected_chromedriver import Chrome
 
 from src.browser import Browser
+
+from .constants import REWARDS_URL
 
 
 class Login:
@@ -108,10 +112,14 @@ class Login:
                     # TOTP token provided
                     logging.info("[LOGIN] Entering OTP...")
                     otp = TOTP(self.browser.totp.replace(" ", "")).now()
-                    otpField = self.utils.waitUntilClickable(By.ID, "idTxtBx_SAOTCC_OTC")
+                    otpField = self.utils.waitUntilClickable(
+                        By.ID, "idTxtBx_SAOTCC_OTC"
+                    )
                     otpField.send_keys(otp)
                     assert otpField.get_attribute("value") == otp
-                    self.utils.waitUntilClickable(By.ID, "idSubmit_SAOTCC_Continue").click()
+                    self.utils.waitUntilClickable(
+                        By.ID, "idSubmit_SAOTCC_Continue"
+                    ).click()
 
                 else:
                     # TOTP token not provided, manual intervention required
@@ -144,6 +152,28 @@ class Login:
             )
             input()
 
-        self.utils.waitUntilVisible(
-            By.CSS_SELECTOR, 'html[data-role-name="RewardsPortal"]'
-        )
+        # Wait for dashboard to load. Two options are provided. (they might be not be graceful, but they work)
+
+        # # OPTION1: go mauallly to load https://rewards.bing.com/
+        # input("Hit <enter> once you make sure dashboard is loaded...")
+
+        # OPTION2: automate with a max retry
+        MAX_RETRY_DASHBOARD = 5
+        RETRY_DASHBOARD_DELAY = 30
+        retry_count = 0
+        while retry_count < MAX_RETRY_DASHBOARD:
+            try:
+                self.utils.waitUntilVisible(
+                    By.CSS_SELECTOR, 'html[data-role-name="RewardsPortal"]'
+                )
+                break
+            except TimeoutException:
+                retry_count += 1
+                logging.warning(
+                    f"[LOGIN] Logged in but Dashboard not loaded, retrying ({retry_count}/{MAX_RETRY_DASHBOARD})..."
+                )
+                self.webdriver.get(REWARDS_URL)
+                time.sleep(RETRY_DASHBOARD_DELAY)
+        else:
+            logging.error("[LOGIN] Failed to load Dashboard after maximum retries.")
+            raise TimeoutException("Failed to load Dashboard after maximum retries.")
