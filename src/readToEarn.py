@@ -63,7 +63,8 @@ class ReadToEarn:
                 redirect_response = self.webdriver.current_url
                 break
             else:
-                cur_retires += 1
+                print(self.webdriver.current_url)
+                print(authorization_url)
                 self.webdriver.get(authorization_url)
                 time.sleep(5)
 

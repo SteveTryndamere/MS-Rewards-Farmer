@@ -64,7 +64,7 @@ class Utils:
             return {}
 
     @staticmethod
-    def sendNotification(title, body) -> None:
+    def sendNotification(title: str, body: str) -> None:
         if Utils.args.disable_apprise:
             return None
         apprise = Apprise()

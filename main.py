@@ -30,49 +30,8 @@ from src.browser import RemainingSearches
 from src.loggingColoredFormatter import ColoredFormatter
 from src.utils import Utils, manage_running_status
 
-# MAX_RERUNS = 3
-# CD_BETWEEN_ACCOUNT_RUNS = 37
-
-
-# def get_rerun_accounts():
-#     rerun_needed_accounts = []
-#     # determine which accounts need to be rerun based on the recent logs
-#     try:
-#         log_summary = parse_log()  # fetch the most recent log
-#         df_completion = check_completion(log_summary, ret_type="df")
-#         df_max_run = df_completion.loc[
-#             df_completion.groupby("account")["run_index"].idxmax()
-#         ].reset_index(drop=True)
-#         today = datetime.today().date()
-#         df_max_run["is_run_today"] = (
-#             df_max_run["ts_start"].apply(pd.Timestamp).dt.date == today
-#         )
-#         logged_accountnames = list(df_max_run["account"].unique())
-#         # print(logged_accountnames)
-#         # accounts need to be rerun if the last run was not today or if the last run was today but not completed
-#         rerun_needed_accountnames = df_max_run[
-#             (df_max_run["is_run_today"] == False)
-#             | (
-#                 (df_max_run["is_run_today"] == True)
-#                 & (df_max_run["overall_completion"] == False)
-#             )
-#         ]["account"].tolist()
-#         rerun_needed_accounts = [
-#             acc
-#             for acc in setupAccounts()
-#             if acc.username in rerun_needed_accountnames
-#             or acc.username not in logged_accountnames
-#         ]
-#         cur_reruns = df_max_run[df_max_run["is_run_today"]]["run_index"].max()
-#     except FileNotFoundError:  # no log file found
-#         rerun_needed_accounts = setupAccounts()  # rerun all available accounts
-#         cur_reruns = 0
-#     return cur_reruns, rerun_needed_accounts
-
 
 def main(accounts=None):
-    # manage_running_status(method="set", value=True)
-
     args = argumentParser()
     Utils.args = args
     setupLogging()
